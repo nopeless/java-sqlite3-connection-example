@@ -7,7 +7,7 @@ import java.sql.*;
 
 public class DBManager {
     private final String dbUrl;
-    private State state = State.DISCONNECTED;
+    private DBManagerState state = DBManagerState.DISCONNECTED;
 
     private Connection connection;
 
@@ -16,7 +16,7 @@ public class DBManager {
         if (res == null) {
             throw new RuntimeException("File not found!");
         }
-        String absolutePath = Paths.get(res.toURI()).toFile().getAbsolutePath();
+        String absolutePath = Paths.get(res.toURI()).normalize().toString();
         this.dbUrl = "jdbc:sqlite:/" + absolutePath;
 
     }
@@ -24,23 +24,23 @@ public class DBManager {
     public void connect() throws SQLException {
         try {
             this.connection = DriverManager.getConnection(this.dbUrl);
-            this.state = State.CONNECTED;
+            this.state = DBManagerState.CONNECTED;
         } catch (SQLException e) {
-            this.state = State.ERROR;
+            this.state = DBManagerState.ERROR;
             e.printStackTrace();
             throw e;
         }
     }
 
     public ResultSet execute(String query) throws SQLException {
-        if (this.state != State.CONNECTED || this.connection == null) {
+        if (this.state != DBManagerState.CONNECTED || this.connection == null) {
             throw new DBNotConnectedException();
         }
         Statement statement = this.connection.createStatement();
         return statement.executeQuery(query);
     }
 
-    public State getState() {
+    public DBManagerState getState() {
         return state;
     }
 
@@ -48,7 +48,4 @@ public class DBManager {
         return dbUrl;
     }
 
-    public enum State {
-        CONNECTED, DISCONNECTED, ERROR
-    }
 }
